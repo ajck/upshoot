@@ -1,0 +1,55 @@
+<?php
+
+// Main controller code. Displays index page, adds owners and motorbikes to the database and returns the entered data for the tables, finds the closest owner. All grouped in one controller as this is such a small project.
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class MainController extends Controller
+{
+    public function showIndexPage()
+		{
+        return view('index', array('page' => 'index')); // Display the index page
+		}
+	
+	// Add an owner to the database:
+	public function addOwner(Request $request)
+		{
+		location = explode(',',$request->input('location')); // Split location coords into latitude and longitude
+		
+		// Create a new owner record in the database:
+		$owner = Owner::create(['name' => $request->input('name'), 'motorbike_id' => $request->input('motorbike_id'), 'lat' => $location[0], 'lon' => $location[1]]);	
+		
+		// Send owner data as JSON response over AJAX:
+		return response()->json(['id' => $owner->id, 'name' => $owner->name, 'motorbike_id' => $owner->motorbike_id, 'location' => $owner->lat.','.$owner->lon]);
+		}
+
+		
+	// Add a motorbike to the database:
+	public function addMotorbike(Request $request)
+		{
+		// Create a new motorbike record in the database:
+		$motorbike = Motorbike::create(['brand' => $request->input('brand'), 'colour' => $request->input('colour'), 'model_year' => $request->input('model_year')]);
+
+		// Send motorbike data as JSON response over AJAX:
+		return response()->json(['id' => $motorbike->id, 'brand' => $motorbike->brand, 'colour' => $motorbike->colour, 'model_year' => $motorbike->model_year]);
+		}
+	
+
+	// Find the closest owner:
+	public function closestOwner(Request $request)
+		{		
+		// Find closest owner, formula adapted from: https://developers.google.com/maps/solutions/store-locator/clothing-store-locator#finding-locations-with-mysql
+		$owner = DB::table('owners')
+				 ->select(DB::raw("id, name, motorbike_id, lat, lon, (3959 * acos(cos(radians(:origin_lat)) * cos(radians(lat)) * cos(radians(lon) - radians(:origin_lon)) + sin(radians(:origin_lat)) * sin(radians(lat)))) AS distance"))
+				 // Bind params to avoid SQL injection as per warning here: https://laravel.com/docs/5.4/queries#raw-expressions
+				 ->setBindings(['origin_lat' => $request->lat, 'origin_lon' => $request->lon])
+				 ->orderBy('distance', 'asc')
+				 ->first();
+
+		// Send owner data as JSON response over AJAX:
+		return response()->json(['id' => $owner->id, 'name' => $owner->name, 'motorbike_id' => $owner->motorbike_id, 'location' => $owner->lat.','.$owner->lon]);
+		}
+
+}
