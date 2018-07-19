@@ -66,7 +66,7 @@ class MainController extends Controller
 		// Find closest owner, formula adapted from: https://developers.google.com/maps/solutions/store-locator/clothing-store-locator#finding-locations-with-mysql
 		$owner = DB::table('owners')
 				 ->select(DB::raw("id, name, motorbike_id, lat, lon, (3959 * acos(cos(radians(:origin_lat)) * cos(radians(lat)) * cos(radians(lon) - radians(:origin_lon)) + sin(radians(:origin_lat2)) * sin(radians(lat)))) AS distance"))
-				 // Note: I am aware of the SQL injection risk with the above statement and the need to bind params to avoid SQL injection as per warning here: https://laravel.com/docs/5.4/queries#raw-expressions but did not have the time to get this working correctly with the use of DB::raw in the select statement and found that setBindings below gave an error due to incorrect parameter numbers being specified.
+				 // Bind params to avoid SQL injection as per warning here: https://laravel.com/docs/5.4/queries#raw-expressions
 				 ->setBindings(['origin_lat' => $src_lat, 'origin_lon' => $src_lon, 'origin_lat2' => $src_lat])
 				 ->orderBy('distance', 'asc')
 				 ->first();
