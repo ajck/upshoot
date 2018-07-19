@@ -1,10 +1,16 @@
 <?php
 
 // Main controller code. Displays index page, adds owners and motorbikes to the database and returns the entered data for the tables, finds the closest owner. All grouped in one controller as this is such a small project.
+// Version: 1.0
+// Author: Alex Kerr
 
 namespace App\Http\Controllers;
+use Illuminate\Support\Facades\DB;
 
 use Illuminate\Http\Request;
+
+use App\Motorbike;
+use App\Owner;
 
 class MainController extends Controller
 {
@@ -12,27 +18,8 @@ class MainController extends Controller
 		{
         return view('index', array('page' => 'index')); // Display the index page
 		}
-	
-	// Add an owner to the database:
-	public function addOwner(Request $request)
-		{
-		// Use Laravel validation to check all fields are present:
-		$this->validate($request, [
-        'name' => 'required',
-        'motorbike_id' => 'required',
-        'location' => 'required' // Note: with more time, and additional rule would be added here to check format, e.g. lat,lon
-		]);
 
-		$location = explode(',',$request->input('location')); // Split location coords into latitude and longitude
-		
-		// Create a new owner record in the database:
-		$owner = Owner::create(['name' => $request->input('name'), 'motorbike_id' => $request->input('motorbike_id'), 'lat' => $location[0], 'lon' => $location[1]]);	
-		
-		// Send owner data as JSON response over AJAX:
-		return response()->json(['id' => $owner->id, 'name' => $owner->name, 'motorbike_id' => $owner->motorbike_id, 'location' => $owner->lat.','.$owner->lon]);
-		}
-
-		
+				
 	// Add a motorbike to the database:
 	public function addMotorbike(Request $request)
 		{
@@ -49,6 +36,24 @@ class MainController extends Controller
 		// Send motorbike data as JSON response over AJAX:
 		return response()->json(['id' => $motorbike->id, 'brand' => $motorbike->brand, 'colour' => $motorbike->colour, 'model_year' => $motorbike->model_year]);
 		}
+
+	// Add an owner to the database.
+	// Note: We can allow non existent motorbike IDs to be specified (e.g. if an owner was added before their motorbike) if we remove the foreign key constraint between owners and motorbikes in the table definitions (migrations).
+	public function addOwner(Request $request)
+		{
+		// Use Laravel validation to check all fields are present:
+		$this->validate($request, [
+        'name' => 'required',
+        'motorbike_id' => 'required',
+        'location' => 'required' // Note: with more time, and additional rule would be added here to check format, e.g. lat,lon
+		]);
+
+		$location = explode(',',$request->input('location')); // Split location coords into latitude and longitude
+		// Create a new owner record in the database:
+		$owner = Owner::create(['name' => $request->input('name'), 'motorbike_id' => $request->input('motorbike_id'), 'lat' => floatval($location[0]), 'lon' => floatval($location[1])]);	
+		// Send owner data as JSON response over AJAX:
+		return response()->json(['id' => $owner->id, 'name' => $owner->name, 'motorbike_id' => $owner->motorbike_id, 'location' => $owner->lat.','.$owner->lon]);
+		}
 	
 
 	// Find the closest owner to London Bridge:
@@ -60,9 +65,9 @@ class MainController extends Controller
 
 		// Find closest owner, formula adapted from: https://developers.google.com/maps/solutions/store-locator/clothing-store-locator#finding-locations-with-mysql
 		$owner = DB::table('owners')
-				 ->select(DB::raw("id, name, motorbike_id, lat, lon, (3959 * acos(cos(radians(:origin_lat)) * cos(radians(lat)) * cos(radians(lon) - radians(:origin_lon)) + sin(radians(:origin_lat)) * sin(radians(lat)))) AS distance"))
-				 // Bind params to avoid SQL injection as per warning here: https://laravel.com/docs/5.4/queries#raw-expressions
-				 ->setBindings(['origin_lat' => $src_lat, 'origin_lon' => $src_lon])
+				 ->select(DB::raw("id, name, motorbike_id, lat, lon, (3959 * acos(cos(radians(:origin_lat)) * cos(radians(lat)) * cos(radians(lon) - radians(:origin_lon)) + sin(radians(:origin_lat2)) * sin(radians(lat)))) AS distance"))
+				 // Note: I am aware of the SQL injection risk with the above statement and the need to bind params to avoid SQL injection as per warning here: https://laravel.com/docs/5.4/queries#raw-expressions but did not have the time to get this working correctly with the use of DB::raw in the select statement and found that setBindings below gave an error due to incorrect parameter numbers being specified.
+				 ->setBindings(['origin_lat' => $src_lat, 'origin_lon' => $src_lon, 'origin_lat2' => $src_lat])
 				 ->orderBy('distance', 'asc')
 				 ->first();
 

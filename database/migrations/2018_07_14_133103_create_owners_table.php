@@ -17,7 +17,7 @@ class CreateOwnersTable extends Migration
             $table->increments('id');
 			$table->string('name', 40)->nullable(); // Owner name
 			$table->integer('motorbike_id')->unsigned()->nullable(); // ID of a record in the motorbikes table for a motorbike this person owns
-			$table->foreign('motorbike_id')->references('id')->on('motorbikes')->onDelete('cascade'); // Define foreign key contraint
+			$table->foreign('motorbike_id')->references('id')->on('motorbikes')->onDelete('cascade'); // Define foreign key constraint
 			$table->float('lat', 10, 6)->nullable(); // Latitude of owner
             $table->float('lon', 10, 6)->nullable(); // Longitude of owner
             $table->timestamps();

@@ -9,9 +9,9 @@ class Motorbike extends Model
 	// Only allow these fields to be set in the DB:
     protected $fillable = ['brand', 'colour', 'model_year'];
 
-	// Get the 
-	public function owner()
+	// Get user who is the initiator for this appointment: (one to many inverse)
+	public function owners()
 		{
-        return $this->belongsTo('App\Owner');
+        return $this->belongsTo('App\Motorbike');
 		}
 }

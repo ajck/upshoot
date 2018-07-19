@@ -10,6 +10,7 @@
     <title>Upshoot Tech Test</title>
 
 	<link href="css/bootstrap.min.css" rel="stylesheet"> <!-- Bootstrap CSS -->
+	<link href="css/font-awesome.min.css" rel="stylesheet"> <!-- FontAwesome icon font CSS -->
 	<link href="css/{{$page}}.css" rel="stylesheet"> <!-- Custom CSS for this page -->
   </head>
 
